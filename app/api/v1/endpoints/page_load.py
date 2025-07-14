@@ -3,7 +3,7 @@ from typing import Optional
 from app.services.page_load_service import page_load_service
 from app.core.dependencies import get_current_user
 
-router = APIRouter(prefix="/page_load", tags=["page_load"])
+router = APIRouter(tags=["page_load"])
 
 @router.get("/home")
 async def get_home_data(current_user: Optional[dict] = Depends(get_current_user)):

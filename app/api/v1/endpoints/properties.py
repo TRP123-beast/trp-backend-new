@@ -3,7 +3,7 @@ from app.schemas.property import PropertyQuery, PropertyResponse, PropertyDetail
 from app.services.property_service import property_service
 from app.core.dependencies import get_current_user
 
-router = APIRouter(prefix="/properties", tags=["properties"])
+router = APIRouter(tags=["properties"])
 
 @router.post("/search", response_model=PropertyResponse)
 async def search_properties(query: PropertyQuery):

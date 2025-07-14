@@ -3,7 +3,7 @@ from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
 from app.services.user_service import user_service
 from app.core.dependencies import get_current_user
 
-router = APIRouter(prefix="/users", tags=["users"])
+router = APIRouter(tags=["users"])
 
 @router.post("/auth/signup", response_model=UserResponse)
 async def signup(user_data: UserCreate):
