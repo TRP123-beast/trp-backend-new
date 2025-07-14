@@ -1,11 +1,11 @@
 from typing import Optional, Dict, Any
-from app.services.property_service import property_service
-from app.services.user_service import user_service
-from app.schemas.property import PropertyQuery
-from app.core.dependencies import get_current_user
+from services.property_service import property_service
+from services.user_service import user_service
+from schemas.property import PropertyQuery
+from core.dependencies import get_current_user
 
 class PageLoadService:
-    async def get_home_data(self, user_info: Optional[Dict] = None) -> Dict[str, Any]:
+    async def get_home_data(self, user_info: dict = None) -> dict:
         """Get merged data for home page load"""
         try:
             # Get properties data
