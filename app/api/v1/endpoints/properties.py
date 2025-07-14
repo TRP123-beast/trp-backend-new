@@ -1,15 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.schemas.property import PropertyQuery, PropertyResponse, PropertyDetail, MediaResponse
+from app.schemas.property import PropertySearchParams, PropertyResponse, PropertyDetail, MediaResponse
 from app.services.property_service import property_service
 from app.core.dependencies import get_current_user
 
 router = APIRouter(tags=["properties"])
 
 @router.post("/search", response_model=PropertyResponse)
-async def search_properties(query: PropertyQuery):
+async def search_properties(params: PropertySearchParams):
     """Search for properties with filters"""
     try:
-        return await property_service.search_properties(query)
+        return await property_service.search_properties(params)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -1,46 +1,42 @@
 import aiohttp
 from typing import Optional, Dict, Any, List
 from app.core.config import settings
-from app.schemas.property import PropertyQuery, PropertyResponse, PropertyDetail, MediaResponse
+from app.schemas.property import PropertySearchParams, PropertyResponse, PropertyDetail, MediaResponse
 
 class PropertyService:
     def __init__(self):
         self.mls_url = settings.MLS_URL
         self.mls_token = settings.MLS_AUTHTOKEN
     
-    async def search_properties(self, query: PropertyQuery) -> PropertyResponse:
-        """Search for properties with filters"""
+    async def search_properties(self, params: PropertySearchParams) -> PropertyResponse:
+        """Search for properties with filters (OData style)"""
         if not self.mls_url or not self.mls_token:
             raise Exception("MLS configuration missing")
         
-        # Build filter string
         filters = []
-        if query.MLS_PROPERTY_TYPE:
-            filters.append(f"MLS_PROPERTY_TYPE eq '{query.MLS_PROPERTY_TYPE}'")
-        if query.MLS_RENTAL_APPLICATION:
-            filters.append(f"MLS_RENTAL_APPLICATION eq '{query.MLS_RENTAL_APPLICATION}'")
-        if query.MLS_ORIGINATING_SYSTEM_NAME:
-            filters.append(f"MLS_ORIGINATING_SYSTEM_NAME eq '{query.MLS_ORIGINATING_SYSTEM_NAME}'")
+        if params.MLS_PROPERTY_TYPE:
+            filters.append(f"PropertyType eq '{params.MLS_PROPERTY_TYPE}'")
+        if params.MLS_RENTAL_APPLICATION is not None:
+            filters.append(f"RentalApplicationYN eq {str(params.MLS_RENTAL_APPLICATION).lower()}")
+        if params.MLS_ORIFINATING_SYSTEM_NAME:
+            filters.append(f"OriginatingSystemName eq '{params.MLS_ORIFINATING_SYSTEM_NAME}'")
+        filter_string = " and ".join(filters) if filters else None
         
-        filter_string = " and ".join(filters) if filters else ""
-        
-        # Build URL with parameters
-        url = f"{self.mls_url}/Property"
-        params = {
-            "$top": query.MLS_TOP_LIMIT,
-            "$select": query.MLS_PROPERTY_FILTER_FIELDS or "*"
+        odata_params = {
+            "$top": params.MLS_TOP_LIMIT,
+            "$select": params.MLS_PPROPERTY_FILTER_FIELDS or "*"
         }
-        
         if filter_string:
-            params["$filter"] = filter_string
+            odata_params["$filter"] = filter_string
         
         headers = {
             "Authorization": f"Bearer {self.mls_token}",
             "Content-Type": "application/json"
         }
         
+        url = f"{self.mls_url}/Property"
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params, headers=headers) as response:
+            async with session.get(url, params=odata_params, headers=headers) as response:
                 if response.status == 200:
                     data = await response.json()
                     return PropertyResponse(
@@ -74,8 +70,6 @@ class PropertyService:
         if not self.mls_url or not self.mls_token:
             raise Exception("MLS configuration missing")
         
-        # This would need to be implemented based on your MLS API structure
-        # for retrieving media/images for a property
         url = f"{self.mls_url}/Property('{property_id}')/Media"
         headers = {
             "Authorization": f"Bearer {self.mls_token}",

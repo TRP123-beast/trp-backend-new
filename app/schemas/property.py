@@ -1,12 +1,13 @@
 from pydantic import BaseModel
 from typing import Optional, List, Any
 
-class PropertyQuery(BaseModel):
+class PropertySearchParams(BaseModel):
+    MLS_TOP_LIMIT: Optional[int] = 10
+    MLS_RESOURCE_RECORD_KEY: Optional[str] = None
     MLS_PROPERTY_TYPE: Optional[str] = None
-    MLS_RENTAL_APPLICATION: Optional[str] = None
-    MLS_ORIGINATING_SYSTEM_NAME: Optional[str] = None
-    MLS_TOP_LIMIT: Optional[int] = 50
-    MLS_PROPERTY_FILTER_FIELDS: Optional[str] = None
+    MLS_RENTAL_APPLICATION: Optional[bool] = None
+    MLS_ORIFINATING_SYSTEM_NAME: Optional[str] = None
+    MLS_PPROPERTY_FILTER_FIELDS: Optional[str] = None
 
 class PropertyBase(BaseModel):
     ListingKey: Optional[str] = None
