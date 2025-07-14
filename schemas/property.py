@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Any
 
 class PropertySearchParams(BaseModel):
@@ -16,7 +16,7 @@ class PropertyBase(BaseModel):
     MLS_ORIGINATING_SYSTEM_NAME: Optional[str] = None
 
 class PropertyResponse(BaseModel):
-    "@odata.context": str
+    odata_context: str = Field(..., alias='@odata.context')
     value: List[Any]
 
 class PropertyDetail(BaseModel):
