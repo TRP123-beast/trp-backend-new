@@ -1,1 +1,0 @@
-# Properties module for TRP backend 
