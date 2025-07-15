@@ -2,10 +2,12 @@
 venv/
 env/
 .venv/
+trp/
 
 # Environment variables
 .env
 .env.local
+env.template
 .env.production
 
 # Python
@@ -52,3 +54,5 @@ logs/
 # Coverage
 .coverage
 htmlcov/ 
+
+.cursor/
