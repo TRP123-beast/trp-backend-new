@@ -1,7 +1,7 @@
 from typing import Optional, Dict, Any
 from app.services.property_service import property_service
 from app.services.user_service import user_service
-from app.schemas.property import PropertyQuery
+from app.schemas.property import PropertySearchParams
 from app.core.dependencies import get_current_user
 
 class PageLoadService:
@@ -9,7 +9,7 @@ class PageLoadService:
         """Get merged data for home page load"""
         try:
             # Get properties data
-            property_query = PropertyQuery(MLS_TOP_LIMIT=10)
+            property_query = PropertySearchParams(MLS_TOP_LIMIT=10)
             properties_data = await property_service.search_properties(property_query)
             
             # Prepare response

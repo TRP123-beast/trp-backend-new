@@ -1,5 +1,5 @@
-from pydantic import BaseSettings
-from typing import Optional
+from pydantic_settings import BaseSettings
+from typing import Optional, Dict
 
 class Settings(BaseSettings):
     # MLS Configuration
@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     SUPABASE_URL: Optional[str] = None
     SUPABASE_ANON_KEY: Optional[str] = None
     SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
+    
+    # Resource Record Key Mapping
+    RESOURCE_RECORD_KEY_MAPPING: Dict[str, str] = {}
     
     # JWT Configuration
     JWT_SECRET_KEY: Optional[str] = "your-secret-key-change-in-production"
