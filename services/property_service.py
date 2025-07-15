@@ -1,7 +1,7 @@
 import aiohttp
 from typing import Optional, Dict, Any, List
-from app.core.config import settings
-from app.schemas.property import PropertySearchParams, PropertyResponse, PropertyDetail, MediaResponse
+from core.config import settings
+from schemas.property import PropertySearchParams, PropertyResponse, PropertyDetail, MediaResponse
 
 class PropertyService:
     def __init__(self):

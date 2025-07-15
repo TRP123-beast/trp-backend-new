@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from app.schemas.property import PropertySearchParams, PropertyResponse, PropertyDetail, MediaResponse
-from app.services.property_service import property_service
-from app.core.dependencies import get_current_user
+from schemas.property import PropertySearchParams, PropertyResponse, PropertyDetail, MediaResponse
+from services.property_service import property_service
+from core.dependencies import get_current_user
 
 router = APIRouter(tags=["properties"])
 

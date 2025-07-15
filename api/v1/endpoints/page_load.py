@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Optional
-from app.services.page_load_service import page_load_service
-from app.core.dependencies import get_current_user
+from services.page_load_service import page_load_service
+from core.dependencies import get_current_user
 
 router = APIRouter(tags=["page_load"])
 

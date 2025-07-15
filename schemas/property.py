@@ -16,7 +16,7 @@ class PropertyBase(BaseModel):
     MLS_ORIGINATING_SYSTEM_NAME: Optional[str] = None
 
 class PropertyResponse(BaseModel):
-    odata_context: str = Field(alias="@odata.context")
+    odata_context: str = Field(..., alias='@odata.context')
     value: List[Any]
 
 class PropertyDetail(BaseModel):

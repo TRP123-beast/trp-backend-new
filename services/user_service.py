@@ -1,8 +1,8 @@
 import aiohttp
 from typing import Optional, Dict, Any
-from app.core.config import settings
-from app.core.security import get_password_hash, verify_password, create_access_token
-from app.schemas.user import UserCreate, UserLogin, UserResponse, Token
+from core.config import settings
+from core.security import get_password_hash, verify_password, create_access_token
+from schemas.user import UserCreate, UserLogin, UserResponse, Token
 
 class UserService:
     def __init__(self):
