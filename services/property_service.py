@@ -33,12 +33,12 @@ class PropertyService:
         )
         top_limit = top_limit or int(settings.MLS_TOP_LIMIT)
         
-        # OData expects true/false as lowercase
+        # OData expects true/false as lowercase, no quotes (as in working Postman)
         rental_application_str = str(rental_application_yn).lower()
         
         filter_query = (
             f"PropertyType eq '{property_type}' "
-            f"and RentalApplicationYN eq {rental_application_str} "
+            f"and RentalApplicationYN eq {rental_application_str} "  # NO quotes around {rental_application_str}
             f"and OriginatingSystemName eq '{settings.MLS_ORIFINATING_SYSTEM_NAME}'"
         )
         
@@ -50,12 +50,16 @@ class PropertyService:
         )
         url = f"{self.mls_url}/Property?{query_string}"
         logger.info(f"MLS API request: {url}")
+        logger.info(f"MLS API filter_query: {filter_query}")
         print(f"MLS API request: {url}")
+        print(f"MLS API filter_query: {filter_query}")
         
         headers = {
             "Authorization": f"Bearer {self.mls_token}",
             "Content-Type": "application/json"
         }
+        logger.info(f"MLS API headers: {headers}")
+        print(f"MLS API headers: {headers}")
         
         async with aiohttp.ClientSession() as session:
             try:
