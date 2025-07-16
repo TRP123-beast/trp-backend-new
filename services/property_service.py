@@ -7,6 +7,11 @@ import logging
 logger = logging.getLogger("mls_proxy")
 logging.basicConfig(level=logging.INFO)
 
+def strip_quotes(val):
+    if isinstance(val, str) and val.startswith('"') and val.endswith('"'):
+        return val[1:-1]
+    return val
+
 class MLSAPIError(Exception):
     """Custom exception for MLS API errors."""
     def __init__(self, message: str, status_code: int = 500, detail: Any = None):
@@ -26,7 +31,8 @@ class PropertyService:
             raise MLSAPIError("MLS configuration missing", 500)
         
         # Use dynamic params if provided, else fallback to env
-        property_type = property_type or settings.MLS_PROPERTY_TYPE
+        property_type = strip_quotes(property_type or settings.MLS_PROPERTY_TYPE)
+        originating_system_name = strip_quotes(settings.MLS_ORIFINATING_SYSTEM_NAME)
         rental_application_yn = (
             rental_application_yn if rental_application_yn is not None
             else (settings.MLS_RENTAL_APPLICATION.lower() == "true" if isinstance(settings.MLS_RENTAL_APPLICATION, str) else bool(settings.MLS_RENTAL_APPLICATION))
@@ -38,8 +44,8 @@ class PropertyService:
         
         filter_query = (
             f"PropertyType eq '{property_type}' "
-            f"and RentalApplicationYN eq {rental_application_str} "  # NO quotes around {rental_application_str}
-            f"and OriginatingSystemName eq '{settings.MLS_ORIFINATING_SYSTEM_NAME}'"
+            f"and RentalApplicationYN eq {rental_application_str} "
+            f"and OriginatingSystemName eq '{originating_system_name}'"
         )
         
         # Build the query string manually (no URL encoding for OData)
