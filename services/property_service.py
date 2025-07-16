@@ -3,7 +3,6 @@ from typing import Optional, Dict, Any, List
 from core.config import settings
 from schemas.property import MLSAPIResponse, MLSPropertyDetails, PropertySearchParams, PropertyResponse, PropertyDetail, MediaResponse
 import logging
-import urllib.parse
 
 logger = logging.getLogger("mls_proxy")
 logging.basicConfig(level=logging.INFO)
@@ -43,16 +42,15 @@ class PropertyService:
             f"and OriginatingSystemName eq '{settings.MLS_ORIFINATING_SYSTEM_NAME}'"
         )
         
-        query_params = {
-            "$filter": filter_query,
-            "$top": top_limit,
-            "$select": settings.MLS_PPROPERTY_FILTER_FIELDS
-        }
-        
-        url = f"{self.mls_url}/Property"
-        full_url = f"{url}?{urllib.parse.urlencode(query_params)}"
-        logger.info(f"MLS API request: {full_url}")
-        print(f"MLS API request: {full_url}")
+        # Build the query string manually (no URL encoding for OData)
+        query_string = (
+            f"$filter={filter_query}"
+            f"&$top={top_limit}"
+            f"&$select={settings.MLS_PPROPERTY_FILTER_FIELDS}"
+        )
+        url = f"{self.mls_url}/Property?{query_string}"
+        logger.info(f"MLS API request: {url}")
+        print(f"MLS API request: {url}")
         
         headers = {
             "Authorization": f"Bearer {self.mls_token}",
@@ -61,7 +59,7 @@ class PropertyService:
         
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get(url, params=query_params, headers=headers, timeout=30) as response:
+                async with session.get(url, headers=headers, timeout=30) as response:
                     if response.status == 200:
                         data = await response.json()
                         validated_response = MLSAPIResponse(**data)
