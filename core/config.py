@@ -1,30 +1,20 @@
 
-from pydantic_settings import BaseSettings
-from typing import Optional, Dict
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
-    # MLS Configuration
-    MLS_URL: Optional[str] = None
-    MLS_AUTHTOKEN: Optional[str] = None
+    # MLS API Configuration
+    MLS_URL: str
+    MLS_AUTHTOKEN: str
+    MLS_PROPERTY_TYPE: str
+    MLS_RENTAL_APPLICATION: str
+    MLS_ORIFINATING_SYSTEM_NAME: str
+    MLS_TOP_LIMIT: str
+    MLS_PPROPERTY_FILTER_FIELDS: str
     
     # Supabase Configuration
-    SUPABASE_URL: Optional[str] = None
-    SUPABASE_ANON_KEY: Optional[str] = None
-    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
+    SUPABASE_URL: str
+    SUPABASE_ANON_KEY: str
     
-    # Resource Record Key Mapping
-    RESOURCE_RECORD_KEY_MAPPING: Dict[str, str] = {}
-    
-    # JWT Configuration
-    JWT_SECRET_KEY: Optional[str] = "your-secret-key-change-in-production"
-    JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
-    # CORS Configuration
-    ALLOWED_ORIGINS: list = ["*"]
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings() 
