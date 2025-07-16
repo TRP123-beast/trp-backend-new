@@ -2,6 +2,11 @@ import aiohttp
 from typing import Optional, Dict, Any, List
 from core.config import settings
 from schemas.property import MLSAPIResponse, MLSPropertyDetails, PropertySearchParams, PropertyResponse, PropertyDetail, MediaResponse
+import logging
+import urllib.parse
+
+logger = logging.getLogger("mls_proxy")
+logging.basicConfig(level=logging.INFO)
 
 class MLSAPIError(Exception):
     """Custom exception for MLS API errors."""
@@ -16,54 +21,68 @@ class PropertyService:
         self.mls_url = settings.MLS_URL
         self.mls_token = settings.MLS_AUTHTOKEN
     
-    async def search_properties_mls(self) -> MLSAPIResponse:
-        """Search for properties using MLS API with environment variables"""
+    async def search_properties_mls(self, property_type: Optional[str] = None, rental_application_yn: Optional[bool] = None, top_limit: Optional[int] = None) -> MLSAPIResponse:
+        """Search for properties using MLS API with environment variables or dynamic params"""
         if not self.mls_url or not self.mls_token:
             raise MLSAPIError("MLS configuration missing", 500)
         
-        # Build the OData filter query using environment variables
+        # Use dynamic params if provided, else fallback to env
+        property_type = property_type or settings.MLS_PROPERTY_TYPE
+        rental_application_yn = (
+            rental_application_yn if rental_application_yn is not None
+            else (settings.MLS_RENTAL_APPLICATION.lower() == "true" if isinstance(settings.MLS_RENTAL_APPLICATION, str) else bool(settings.MLS_RENTAL_APPLICATION))
+        )
+        top_limit = top_limit or int(settings.MLS_TOP_LIMIT)
+        
+        # OData expects true/false as lowercase
+        rental_application_str = str(rental_application_yn).lower()
+        
         filter_query = (
-            f"PropertyType eq '{settings.MLS_PROPERTY_TYPE}' "
-            f"and RentalApplicationYN eq {settings.MLS_RENTAL_APPLICATION} "
+            f"PropertyType eq '{property_type}' "
+            f"and RentalApplicationYN eq {rental_application_str} "
             f"and OriginatingSystemName eq '{settings.MLS_ORIFINATING_SYSTEM_NAME}'"
         )
         
-        # Construct query parameters
         query_params = {
             "$filter": filter_query,
-            "$top": settings.MLS_TOP_LIMIT,
+            "$top": top_limit,
             "$select": settings.MLS_PPROPERTY_FILTER_FIELDS
         }
+        
+        url = f"{self.mls_url}/Property"
+        full_url = f"{url}?{urllib.parse.urlencode(query_params)}"
+        logger.info(f"MLS API request: {full_url}")
+        print(f"MLS API request: {full_url}")
         
         headers = {
             "Authorization": f"Bearer {self.mls_token}",
             "Content-Type": "application/json"
         }
         
-        url = f"{self.mls_url}/Property"
-        
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url, params=query_params, headers=headers, timeout=30) as response:
                     if response.status == 200:
                         data = await response.json()
-                        # Validate response with Pydantic
                         validated_response = MLSAPIResponse(**data)
                         return validated_response
                     else:
                         error_text = await response.text()
+                        logger.error(f"MLS API error {response.status}: {error_text}")
+                        print(f"MLS API error {response.status}: {error_text}")
                         raise MLSAPIError(
                             f"MLS API error: {response.status}",
                             response.status,
                             error_text
                         )
             except aiohttp.ClientError as e:
+                logger.error(f"Network error connecting to MLS API: {e}")
                 raise MLSAPIError(f"Network error connecting to MLS API: {e}", 503)
             except Exception as e:
+                logger.error(f"Unexpected error: {e}")
                 raise MLSAPIError(f"Unexpected error: {e}", 500)
     
     async def search_properties(self, params: PropertySearchParams) -> PropertyResponse:
-        """Legacy search method - keeping for compatibility"""
         if not self.mls_url or not self.mls_token:
             raise Exception("MLS configuration missing")
         
@@ -101,7 +120,6 @@ class PropertyService:
                     raise Exception(f"MLS API error: {response.status}")
     
     async def get_property(self, property_id: str) -> PropertyDetail:
-        """Get specific property details"""
         if not self.mls_url or not self.mls_token:
             raise Exception("MLS configuration missing")
         
@@ -120,7 +138,6 @@ class PropertyService:
                     raise Exception(f"Property not found: {response.status}")
     
     async def get_property_media(self, property_id: str) -> MediaResponse:
-        """Get property media/images"""
         if not self.mls_url or not self.mls_token:
             raise Exception("MLS configuration missing")
         

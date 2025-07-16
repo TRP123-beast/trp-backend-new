@@ -1,15 +1,29 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Query
+from typing import Optional
 from schemas.property import MLSAPIResponse, PropertyResponse, PropertyDetail, MediaResponse
 from services.property_service import property_service, MLSAPIError
 from core.dependencies import get_current_user
+import logging
+import urllib.parse
+
+logger = logging.getLogger("mls_proxy")
+logging.basicConfig(level=logging.INFO)
 
 router = APIRouter(tags=["properties"])
 
 @router.post("/search", response_model=MLSAPIResponse)
-async def search_properties():
-    """Search for properties using MLS API with environment variables"""
+async def search_properties(
+    property_type: Optional[str] = Query(None, description="Type of property (e.g., Residential Freehold)"),
+    rental_application_yn: Optional[bool] = Query(None, description="Rental application required (true/false)"),
+    top_limit: Optional[int] = Query(None, description="Maximum number of results to return")
+):
+    """Search for properties using MLS API with environment variables or dynamic query params"""
     try:
-        return await property_service.search_properties_mls()
+        return await property_service.search_properties_mls(
+            property_type=property_type,
+            rental_application_yn=rental_application_yn,
+            top_limit=top_limit
+        )
     except MLSAPIError as e:
         raise HTTPException(
             status_code=e.status_code,
