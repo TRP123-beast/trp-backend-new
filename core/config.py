@@ -1,5 +1,6 @@
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import List
 
 class Settings(BaseSettings):
     # MLS API Configuration
@@ -14,7 +15,10 @@ class Settings(BaseSettings):
     # Supabase Configuration
     SUPABASE_URL: str
     SUPABASE_ANON_KEY: str
-    
+
+    # CORS Configuration
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8000"]
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings() 
