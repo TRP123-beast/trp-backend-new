@@ -25,14 +25,14 @@ class PropertyService:
         self.mls_url = settings.MLS_URL
         self.mls_token = settings.MLS_AUTHTOKEN
     
-    async def search_properties_mls(self, property_type: Optional[str] = None, rental_application_yn: Optional[bool] = None, top_limit: Optional[int] = None) -> MLSAPIResponse:
+    async def search_properties_mls(self, property_type: Optional[str] = None, rental_application_yn: Optional[bool] = None, top_limit: Optional[int] = None, originating_system_name: Optional[str] = None) -> MLSAPIResponse:
         """Search for properties using MLS API with environment variables or dynamic params"""
         if not self.mls_url or not self.mls_token:
             raise MLSAPIError("MLS configuration missing", 500)
         
         # Use dynamic params if provided, else fallback to env
         property_type = strip_quotes(property_type or settings.MLS_PROPERTY_TYPE)
-        originating_system_name = strip_quotes(settings.MLS_ORIFINATING_SYSTEM_NAME)
+        originating_system_name = strip_quotes(originating_system_name or settings.MLS_ORIFINATING_SYSTEM_NAME)
         rental_application_yn = (
             rental_application_yn if rental_application_yn is not None
             else (settings.MLS_RENTAL_APPLICATION.lower() == "true" if isinstance(settings.MLS_RENTAL_APPLICATION, str) else bool(settings.MLS_RENTAL_APPLICATION))

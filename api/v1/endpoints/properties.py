@@ -3,6 +3,7 @@ from typing import Optional
 from schemas.property import MLSAPIResponse, PropertyResponse, PropertyDetail, MediaResponse
 from services.property_service import property_service, MLSAPIError
 from core.dependencies import get_current_user
+from core.config import settings
 import logging
 import urllib.parse
 
@@ -15,14 +16,16 @@ router = APIRouter(tags=["properties"])
 async def search_properties(
     property_type: Optional[str] = Query(None, description="Type of property (e.g., Residential Freehold)"),
     rental_application_yn: Optional[bool] = Query(None, description="Rental application required (true/false)"),
-    top_limit: Optional[int] = Query(None, description="Maximum number of results to return")
+    top_limit: Optional[int] = Query(None, description="Maximum number of results to return"),
+    originating_system_name: Optional[str] = Query(None, description="Originating System Name (e.g., Toronto Regional Real Estate Board)")
 ):
     """Search for properties using MLS API with environment variables or dynamic query params"""
     try:
         return await property_service.search_properties_mls(
             property_type=property_type,
             rental_application_yn=rental_application_yn,
-            top_limit=top_limit
+            top_limit=top_limit,
+            originating_system_name=originating_system_name
         )
     except MLSAPIError as e:
         raise HTTPException(
