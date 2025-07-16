@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 
 router = APIRouter(tags=["properties"])
 
-@router.post("/search", response_model=MLSAPIResponse)
+@router.get("/search", response_model=MLSAPIResponse)
 async def search_properties(
     property_type: Optional[str] = Query(None, description="Type of property (e.g., Residential Freehold)"),
     rental_application_yn: Optional[bool] = Query(None, description="Rental application required (true/false)"),
@@ -24,6 +24,24 @@ async def search_properties(
             rental_application_yn=rental_application_yn,
             top_limit=top_limit
         )
+    except MLSAPIError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"message": e.message, "external_detail": e.detail}
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected server error occurred: {e}"
+        )
+
+@router.get("/selected-fields", response_model=MLSAPIResponse, summary="Get Properties with Selected Fields")
+async def get_properties_selected_fields(
+    top_limit: Optional[int] = Query(None, description="Maximum number of results to return")
+):
+    """Get properties with only $select and $top filters (no $filter)."""
+    try:
+        return await property_service.get_properties_selected_fields(top_limit=top_limit)
     except MLSAPIError as e:
         raise HTTPException(
             status_code=e.status_code,

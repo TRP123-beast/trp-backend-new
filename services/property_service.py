@@ -167,4 +167,45 @@ class PropertyService:
                 else:
                     raise Exception(f"Media not found: {response.status}")
 
+    async def get_properties_selected_fields(self, top_limit: Optional[int] = None) -> MLSAPIResponse:
+        """Get properties with only $select and $top filters (no $filter)."""
+        if not self.mls_url or not self.mls_token:
+            raise MLSAPIError("MLS configuration missing", 500)
+        top_limit = top_limit or int(settings.MLS_TOP_LIMIT)
+        query_string = (
+            f"$select={settings.MLS_PPROPERTY_FILTER_FIELDS}"
+            f"&$top={top_limit}"
+        )
+        url = f"{self.mls_url}/Property?{query_string}"
+        logger.info(f"MLS API request (selected fields): {url}")
+        print(f"MLS API request (selected fields): {url}")
+        headers = {
+            "Authorization": f"Bearer {self.mls_token}",
+            "Content-Type": "application/json"
+        }
+        logger.info(f"MLS API headers: {headers}")
+        print(f"MLS API headers: {headers}")
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, headers=headers, timeout=30) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        validated_response = MLSAPIResponse(**data)
+                        return validated_response
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"MLS API error {response.status}: {error_text}")
+                        print(f"MLS API error {response.status}: {error_text}")
+                        raise MLSAPIError(
+                            f"MLS API error: {response.status}",
+                            response.status,
+                            error_text
+                        )
+            except aiohttp.ClientError as e:
+                logger.error(f"Network error connecting to MLS API: {e}")
+                raise MLSAPIError(f"Network error connecting to MLS API: {e}", 503)
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
+                raise MLSAPIError(f"Unexpected error: {e}", 500)
+
 property_service = PropertyService() 
