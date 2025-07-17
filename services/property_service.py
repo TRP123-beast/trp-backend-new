@@ -208,8 +208,8 @@ class PropertyService:
         print(f"MLS API media request: {url}")
         
         headers = {
-            "Authorization": f"Bearer {self.mls_token}",
-            "Content-Type": "application/json"
+            "Authorization": f"Bearer {self.mls_token}"
+            # No Content-Type header for GET requests
         }
         logger.info(f"MLS API media headers: {headers}")
         print(f"MLS API media headers: {headers}")
@@ -255,9 +255,10 @@ class PropertyService:
         logger.info(f"MLS API media simple request: {url}")
         print(f"MLS API media simple request: {url}")
         
+        # Remove Content-Type header for GET requests - OData API expects no body
         headers = {
-            "Authorization": f"Bearer {self.mls_token}",
-            "Content-Type": "application/json"
+            "Authorization": f"Bearer {self.mls_token}"
+            # No Content-Type header for GET requests
         }
         logger.info(f"MLS API media simple headers: {headers}")
         print(f"MLS API media simple headers: {headers}")
