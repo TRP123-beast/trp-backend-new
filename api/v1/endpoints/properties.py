@@ -64,10 +64,28 @@ async def get_property(property_id: str):
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
-@router.get("/media/{property_id}", response_model=MediaResponse)
-async def get_property_media(property_id: str):
-    """Get property media/images"""
+@router.get("/media/{property_id}", response_model=MediaResponse, summary="Get Property Images with Selected Fields")
+async def get_property_media_with_fields(property_id: str):
+    """Get property media/images with selected fields filter"""
     try:
         return await property_service.get_property_media(property_id)
+    except MLSAPIError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"message": e.message, "external_detail": e.detail}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+@router.get("/media-simple/{property_id}", response_model=MediaResponse, summary="Get Property Images")
+async def get_property_media_simple(property_id: str):
+    """Get property media/images with minimal filters - just ResourceRecordKey filter"""
+    try:
+        return await property_service.get_property_media_simple(property_id)
+    except MLSAPIError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"message": e.message, "external_detail": e.detail}
+        )
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e)) 

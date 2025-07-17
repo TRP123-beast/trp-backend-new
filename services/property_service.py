@@ -187,7 +187,7 @@ class PropertyService:
                     raise Exception(f"Property not found: {response.status}")
     
     async def get_property_media(self, property_id: str) -> MediaResponse:
-        """Get property media/images using the correct OData structure"""
+        """Get property media/images using the correct OData structure with selected fields"""
         if not self.mls_url or not self.mls_token:
             raise MLSAPIError("MLS configuration missing", 500)
         
@@ -195,8 +195,9 @@ class PropertyService:
         filter_query = f"ResourceRecordKey eq '{property_id}'"
         
         # Get select fields from env with quote stripping, or use fallback
+        # Remove PreferredPhotoYN as it's a boolean field causing type conflicts
         select_fields = strip_quotes(getattr(settings, 'MLS_PROPERTY_IMAGE_FILTER_FIELDS', 
-            'ImageHeight,ImageSizeDescription,ImageWidth,MediaKey,MediaObjectID,MediaType,MediaURL,Order,ResourceRecordKey,PreferredPhotoYN'))
+            'ImageHeight,ImageSizeDescription,ImageWidth,MediaKey,MediaObjectID,MediaType,MediaURL,Order,ResourceRecordKey'))
         
         query_string = (
             f"$filter={filter_query}"
@@ -227,6 +228,50 @@ class PropertyService:
                         error_text = await response.text()
                         logger.error(f"MLS API media error {response.status}: {error_text}")
                         print(f"MLS API media error {response.status}: {error_text}")
+                        raise MLSAPIError(
+                            f"Media not found: {response.status}",
+                            response.status,
+                            error_text
+                        )
+            except aiohttp.ClientError as e:
+                logger.error(f"Network error connecting to MLS API: {e}")
+                raise MLSAPIError(f"Network error connecting to MLS API: {e}", 503)
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
+                raise MLSAPIError(f"Unexpected error: {e}", 500)
+
+    async def get_property_media_simple(self, property_id: str) -> MediaResponse:
+        """Get property media/images with minimal filters - just ResourceRecordKey filter"""
+        if not self.mls_url or not self.mls_token:
+            raise MLSAPIError("MLS configuration missing", 500)
+        
+        # Simple filter without $select to avoid field type issues
+        filter_query = f"ResourceRecordKey eq '{property_id}'"
+        url = f"{self.mls_url}/Media?$filter={filter_query}"
+        logger.info(f"MLS API media simple request: {url}")
+        print(f"MLS API media simple request: {url}")
+        
+        headers = {
+            "Authorization": f"Bearer {self.mls_token}",
+            "Content-Type": "application/json"
+        }
+        logger.info(f"MLS API media simple headers: {headers}")
+        print(f"MLS API media simple headers: {headers}")
+        
+        async with aiohttp.ClientSession() as session:
+            try:
+                async with session.get(url, headers=headers, timeout=30) as response:
+                    if response.status == 200:
+                        data = await response.json()
+                        media_urls = [item.get("MediaURL") for item in data.get("value", []) if item.get("MediaURL")]
+                        return MediaResponse(
+                            property_id=property_id,
+                            media_urls=media_urls
+                        )
+                    else:
+                        error_text = await response.text()
+                        logger.error(f"MLS API media simple error {response.status}: {error_text}")
+                        print(f"MLS API media simple error {response.status}: {error_text}")
                         raise MLSAPIError(
                             f"Media not found: {response.status}",
                             response.status,
