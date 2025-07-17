@@ -21,12 +21,17 @@ async def search_properties(
 ):
     """Search for properties using MLS API with environment variables or dynamic query params"""
     try:
-        # Build filter string from parameters
+        # Build filter string from parameters - temporarily exclude boolean to test
         filters = []
         if property_type:
             filters.append(f"PropertyType eq '{property_type}'")
-        if rental_application_yn is not None:
-            filters.append(f"RentalApplicationYN eq {str(rental_application_yn).lower()}")
+        # Temporarily comment out boolean filter to isolate the issue
+        # if rental_application_yn is not None:
+        #     # Try different boolean formats - some OData APIs are picky about boolean syntax
+        #     if rental_application_yn:
+        #         filters.append("RentalApplicationYN eq true")
+        #     else:
+        #         filters.append("RentalApplicationYN eq false")
         if originating_system_name:
             filters.append(f"OriginatingSystemName eq '{originating_system_name}'")
         

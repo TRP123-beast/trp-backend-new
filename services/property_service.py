@@ -36,6 +36,14 @@ class PropertyService:
         print(f"Making external MLS GET request to: {url}")
         print(f"Request params: {params}")
         
+        # Log the full URL that will be constructed
+        if params:
+            import urllib.parse
+            query_string = urllib.parse.urlencode(params)
+            full_url = f"{url}?{query_string}"
+            logger.info(f"Full URL being sent: {full_url}")
+            print(f"Full URL being sent: {full_url}")
+        
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url, headers=headers, params=params, timeout=30) as response:
