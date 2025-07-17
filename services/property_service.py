@@ -191,32 +191,37 @@ class PropertyService:
         if not self.mls_url or not self.mls_token:
             raise MLSAPIError("MLS configuration missing", 500)
         
-        # Use the correct OData URL structure: /Media with $filter
-        filter_query = f"ResourceRecordKey eq '{property_id}'"
+        # Clean property_id: strip whitespace and quotes, ensure string
+        if not isinstance(property_id, str):
+            property_id = str(property_id)
+        property_id = property_id.strip().strip("'\"")
         
         # Get select fields from env with quote stripping, or use fallback
         # Remove PreferredPhotoYN as it's a boolean field causing type conflicts
         select_fields = strip_quotes(getattr(settings, 'MLS_PROPERTY_IMAGE_FILTER_FIELDS', 
             'ImageHeight,ImageSizeDescription,ImageWidth,MediaKey,MediaObjectID,MediaType,MediaURL,Order,ResourceRecordKey'))
         
-        query_string = (
-            f"$filter={filter_query}"
-            f"&$select={select_fields}"
-        )
-        url = f"{self.mls_url}/Media?{query_string}"
-        logger.info(f"MLS API media request: {url}")
-        print(f"MLS API media request: {url}")
+        # USE DICTIONARY FOR PARAMS
+        params = {
+            '$filter': f"ResourceRecordKey eq '{property_id}'",
+            '$select': select_fields
+        }
+        
+        url = f"{self.mls_url}/Media"
         
         headers = {
             "Authorization": f"Bearer {self.mls_token}"
-            # No Content-Type header for GET requests
         }
-        logger.info(f"MLS API media headers: {headers}")
-        print(f"MLS API media headers: {headers}")
+        
+        logger.info(f"MLS API media request URL: {url}")
+        logger.info(f"MLS API media request params: {params}")
+        print(f"MLS API media request URL: {url}")
+        print(f"MLS API media request params: {params}")
         
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get(url, headers=headers, timeout=30) as response:
+                # Pass the params dictionary to the get method
+                async with session.get(url, headers=headers, params=params, timeout=30) as response:
                     if response.status == 200:
                         data = await response.json()
                         media_urls = [item.get("MediaURL") for item in data.get("value", []) if item.get("MediaURL")]
@@ -250,23 +255,30 @@ class PropertyService:
             property_id = str(property_id)
         property_id = property_id.strip().strip("'\"")
         
-        filter_query = f"ResourceRecordKey eq '{property_id}'"
-        url = f"{self.mls_url}/Media?$filter={filter_query}"
-        logger.info(f"MLS API media simple request: {url}")
-        print(f"MLS API media simple request: {url}")
+        # USE DICTIONARY FOR PARAMS
+        params = {
+            '$filter': f"ResourceRecordKey eq '{property_id}'"
+        }
+        
+        url = f"{self.mls_url}/Media"
         
         # Remove Content-Type header for GET requests - OData API expects no body
         headers = {
             "Authorization": f"Bearer {self.mls_token}"
-            # No Content-Type header for GET requests
         }
+
+        # Log the components that will be sent
+        logger.info(f"MLS API media simple request URL: {url}")
+        logger.info(f"MLS API media simple request params: {params}")
         logger.info(f"MLS API media simple headers: {headers}")
+        print(f"MLS API media simple request URL: {url}")
+        print(f"MLS API media simple request params: {params}")
         print(f"MLS API media simple headers: {headers}")
         
-        # No body is sent, just GET with headers
         async with aiohttp.ClientSession() as session:
             try:
-                async with session.get(url, headers=headers, timeout=30) as response:
+                # Pass the params dictionary to the get method
+                async with session.get(url, headers=headers, params=params, timeout=30) as response:
                     response_text = await response.text()
                     print(f"MLS API media simple response status: {response.status}")
                     print(f"MLS API media simple response text: {response_text}")
