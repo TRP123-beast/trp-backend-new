@@ -21,12 +21,30 @@ async def search_properties(
 ):
     """Search for properties using MLS API with environment variables or dynamic query params"""
     try:
-        return await property_service.search_properties_mls(
-            property_type=property_type,
-            rental_application_yn=rental_application_yn,
-            top_limit=top_limit,
-            originating_system_name=originating_system_name
-        )
+        # Build filter string from parameters
+        filters = []
+        if property_type:
+            filters.append(f"PropertyType eq '{property_type}'")
+        if rental_application_yn is not None:
+            filters.append(f"RentalApplicationYN eq {str(rental_application_yn).lower()}")
+        if originating_system_name:
+            filters.append(f"OriginatingSystemName eq '{originating_system_name}'")
+        
+        filter_string = " and ".join(filters) if filters else None
+        top_limit = top_limit or int(settings.MLS_TOP_LIMIT)
+        select_fields = settings.MLS_PPROPERTY_FILTER_FIELDS
+        
+        if filter_string:
+            return await property_service.search_properties_by_filters(
+                filters=filter_string,
+                top_limit=top_limit,
+                select_fields=select_fields
+            )
+        else:
+            return await property_service.get_properties_with_selected_fields(
+                top_limit=top_limit,
+                select_fields=select_fields
+            )
     except MLSAPIError as e:
         raise HTTPException(
             status_code=e.status_code,
@@ -44,7 +62,12 @@ async def get_properties_selected_fields(
 ):
     """Get properties with only $select and $top filters (no $filter)."""
     try:
-        return await property_service.get_properties_selected_fields(top_limit=top_limit)
+        top_limit = top_limit or int(settings.MLS_TOP_LIMIT)
+        select_fields = settings.MLS_PPROPERTY_FILTER_FIELDS
+        return await property_service.get_properties_with_selected_fields(
+            top_limit=top_limit,
+            select_fields=select_fields
+        )
     except MLSAPIError as e:
         raise HTTPException(
             status_code=e.status_code,
@@ -60,7 +83,13 @@ async def get_properties_selected_fields(
 async def get_property(property_id: str):
     """Get specific property details"""
     try:
-        return await property_service.get_property(property_id)
+        select_fields = settings.MLS_PPROPERTY_FILTER_FIELDS
+        return await property_service.get_property_by_id(property_id, select_fields)
+    except MLSAPIError as e:
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={"message": e.message, "external_detail": e.detail}
+        )
     except Exception as e:
         raise HTTPException(status_code=404, detail=str(e))
 
@@ -68,7 +97,9 @@ async def get_property(property_id: str):
 async def get_property_media_with_fields(property_id: str):
     """Get property media/images with selected fields filter"""
     try:
-        return await property_service.get_property_media(property_id)
+        select_fields = getattr(settings, 'MLS_PROPERTY_IMAGE_FILTER_FIELDS', 
+            'ImageHeight,ImageSizeDescription,ImageWidth,MediaKey,MediaObjectID,MediaType,MediaURL,Order,ResourceRecordKey')
+        return await property_service.get_property_media_with_fields(property_id, select_fields)
     except MLSAPIError as e:
         raise HTTPException(
             status_code=e.status_code,

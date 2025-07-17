@@ -1,16 +1,10 @@
 import aiohttp
-from typing import Optional, Dict, Any, List
+from typing import Optional, List, Dict, Any
 from core.config import settings
-from schemas.property import MLSAPIResponse, MLSPropertyDetails, PropertySearchParams, PropertyResponse, PropertyDetail, MediaResponse
+from schemas.property import MLSAPIResponse, PropertyDetail, MediaResponse
 import logging
 
 logger = logging.getLogger("mls_proxy")
-logging.basicConfig(level=logging.INFO)
-
-def strip_quotes(val):
-    if isinstance(val, str) and val.startswith('"') and val.endswith('"'):
-        return val[1:-1]
-    return val
 
 class MLSAPIError(Exception):
     """Custom exception for MLS API errors."""
@@ -24,284 +18,127 @@ class PropertyService:
     def __init__(self):
         self.mls_url = settings.MLS_URL
         self.mls_token = settings.MLS_AUTHTOKEN
-    
-    async def search_properties_mls(self, property_type: Optional[str] = None, rental_application_yn: Optional[bool] = None, top_limit: Optional[int] = None, originating_system_name: Optional[str] = None) -> MLSAPIResponse:
-        """Search for properties using MLS API with environment variables or dynamic params"""
-        if not self.mls_url or not self.mls_token:
-            raise MLSAPIError("MLS configuration missing", 500)
-        
-        # Use dynamic params if provided, else fallback to env
-        property_type = strip_quotes(property_type or settings.MLS_PROPERTY_TYPE)
-        originating_system_name = strip_quotes(originating_system_name or settings.MLS_ORIFINATING_SYSTEM_NAME)
-        rental_application_yn = (
-            rental_application_yn if rental_application_yn is not None
-            else (settings.MLS_RENTAL_APPLICATION.lower() == "true" if isinstance(settings.MLS_RENTAL_APPLICATION, str) else bool(settings.MLS_RENTAL_APPLICATION))
-        )
-        top_limit = top_limit or int(settings.MLS_TOP_LIMIT)
-        
-        # OData expects true/false as lowercase, no quotes (as in working Postman)
-        rental_application_str = str(rental_application_yn).lower()
-        
-        filter_query = (
-            f"PropertyType eq '{property_type}' "
-            f"and RentalApplicationYN eq {rental_application_str} "
-            f"and OriginatingSystemName eq '{originating_system_name}'"
-        )
-        
-        # Build the query string manually (no URL encoding for OData)
-        query_string = (
-            f"$filter={filter_query}"
-            f"&$top={top_limit}"
-            f"&$select={settings.MLS_PPROPERTY_FILTER_FIELDS}"
-        )
-        url = f"{self.mls_url}/Property?{query_string}"
-        logger.info(f"MLS API request: {url}")
-        logger.info(f"MLS API filter_query: {filter_query}")
-        print(f"MLS API request: {url}")
-        print(f"MLS API filter_query: {filter_query}")
-        
-        headers = {
-            "Authorization": f"Bearer {self.mls_token}",
-            "Content-Type": "application/json"
-        }
-        logger.info(f"MLS API headers: {headers}")
-        print(f"MLS API headers: {headers}")
-        
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(url, headers=headers, timeout=30) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        validated_response = MLSAPIResponse(**data)
-                        return validated_response
-                    else:
-                        error_text = await response.text()
-                        logger.error(f"MLS API error {response.status}: {error_text}")
-                        print(f"MLS API error {response.status}: {error_text}")
-                        raise MLSAPIError(
-                            f"MLS API error: {response.status}",
-                            response.status,
-                            error_text
-                        )
-            except aiohttp.ClientError as e:
-                logger.error(f"Network error connecting to MLS API: {e}")
-                raise MLSAPIError(f"Network error connecting to MLS API: {e}", 503)
-            except Exception as e:
-                logger.error(f"Unexpected error: {e}")
-                raise MLSAPIError(f"Unexpected error: {e}", 500)
 
-    async def get_properties_selected_fields(self, top_limit: Optional[int] = None) -> MLSAPIResponse:
-        """Get properties with only $select and $top filters (no $filter)."""
+    async def _make_mls_get_request(self, endpoint: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """
+        A private helper method to handle basic MLS GET requests.
+        Ensures consistent headers, error handling, and uses the params dictionary.
+        """
         if not self.mls_url or not self.mls_token:
             raise MLSAPIError("MLS configuration missing", 500)
-        top_limit = top_limit or int(settings.MLS_TOP_LIMIT)
-        query_string = (
-            f"$select={settings.MLS_PPROPERTY_FILTER_FIELDS}"
-            f"&$top={top_limit}"
-        )
-        url = f"{self.mls_url}/Property?{query_string}"
-        logger.info(f"MLS API request (selected fields): {url}")
-        print(f"MLS API request (selected fields): {url}")
-        headers = {
-            "Authorization": f"Bearer {self.mls_token}",
-            "Content-Type": "application/json"
-        }
-        logger.info(f"MLS API headers: {headers}")
-        print(f"MLS API headers: {headers}")
-        async with aiohttp.ClientSession() as session:
-            try:
-                async with session.get(url, headers=headers, timeout=30) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        validated_response = MLSAPIResponse(**data)
-                        return validated_response
-                    else:
-                        error_text = await response.text()
-                        logger.error(f"MLS API error {response.status}: {error_text}")
-                        print(f"MLS API error {response.status}: {error_text}")
-                        raise MLSAPIError(
-                            f"MLS API error: {response.status}",
-                            response.status,
-                            error_text
-                        )
-            except aiohttp.ClientError as e:
-                logger.error(f"Network error connecting to MLS API: {e}")
-                raise MLSAPIError(f"Network error connecting to MLS API: {e}", 503)
-            except Exception as e:
-                logger.error(f"Unexpected error: {e}")
-                raise MLSAPIError(f"Unexpected error: {e}", 500)
-    
-    async def search_properties(self, params: PropertySearchParams) -> PropertyResponse:
-        if not self.mls_url or not self.mls_token:
-            raise Exception("MLS configuration missing")
-        
-        filters = []
-        if params.MLS_PROPERTY_TYPE:
-            filters.append(f"PropertyType eq '{params.MLS_PROPERTY_TYPE}'")
-        if params.MLS_RENTAL_APPLICATION is not None:
-            filters.append(f"RentalApplicationYN eq {str(params.MLS_RENTAL_APPLICATION).lower()}")
-        if params.MLS_ORIFINATING_SYSTEM_NAME:
-            filters.append(f"OriginatingSystemName eq '{params.MLS_ORIFINATING_SYSTEM_NAME}'")
-        filter_string = " and ".join(filters) if filters else None
-        
-        odata_params = {
-            "$top": params.MLS_TOP_LIMIT,
-            "$select": params.MLS_PPROPERTY_FILTER_FIELDS or "*"
-        }
-        if filter_string:
-            odata_params["$filter"] = filter_string
-        
-        headers = {
-            "Authorization": f"Bearer {self.mls_token}",
-            "Content-Type": "application/json"
-        }
-        
-        url = f"{self.mls_url}/Property"
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=odata_params, headers=headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return PropertyResponse(
-                        odata_context=data.get("@odata.context", ""),
-                        value=data.get("value", [])
-                    )
-                else:
-                    raise Exception(f"MLS API error: {response.status}")
-    
-    async def get_property(self, property_id: str) -> PropertyDetail:
-        if not self.mls_url or not self.mls_token:
-            raise Exception("MLS configuration missing")
-        
-        url = f"{self.mls_url}/Property('{property_id}')"
-        headers = {
-            "Authorization": f"Bearer {self.mls_token}",
-            "Content-Type": "application/json"
-        }
-        
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return PropertyDetail(**data)
-                else:
-                    raise Exception(f"Property not found: {response.status}")
-    
-    async def get_property_media(self, property_id: str) -> MediaResponse:
-        """Get property media/images using the correct OData structure with selected fields"""
-        if not self.mls_url or not self.mls_token:
-            raise MLSAPIError("MLS configuration missing", 500)
-        
-        # Clean property_id: strip whitespace and quotes, ensure string
-        if not isinstance(property_id, str):
-            property_id = str(property_id)
-        property_id = property_id.strip().strip("'\"")
-        
-        # Get select fields from env with quote stripping, or use fallback
-        # Remove PreferredPhotoYN as it's a boolean field causing type conflicts
-        select_fields = strip_quotes(getattr(settings, 'MLS_PROPERTY_IMAGE_FILTER_FIELDS', 
-            'ImageHeight,ImageSizeDescription,ImageWidth,MediaKey,MediaObjectID,MediaType,MediaURL,Order,ResourceRecordKey'))
-        
-        # USE DICTIONARY FOR PARAMS
-        params = {
-            '$filter': f"ResourceRecordKey eq '{property_id}'",
-            '$select': select_fields
-        }
-        
-        url = f"{self.mls_url}/Media"
-        
-        headers = {
-            "Authorization": f"Bearer {self.mls_token}"
-        }
-        
-        logger.info(f"MLS API media request URL: {url}")
-        logger.info(f"MLS API media request params: {params}")
-        print(f"MLS API media request URL: {url}")
-        print(f"MLS API media request params: {params}")
-        
-        async with aiohttp.ClientSession() as session:
-            try:
-                # Pass the params dictionary to the get method
-                async with session.get(url, headers=headers, params=params, timeout=30) as response:
-                    if response.status == 200:
-                        data = await response.json()
-                        media_urls = [item.get("MediaURL") for item in data.get("value", []) if item.get("MediaURL")]
-                        return MediaResponse(
-                            property_id=property_id,
-                            media_urls=media_urls
-                        )
-                    else:
-                        error_text = await response.text()
-                        logger.error(f"MLS API media error {response.status}: {error_text}")
-                        print(f"MLS API media error {response.status}: {error_text}")
-                        raise MLSAPIError(
-                            f"Media not found: {response.status}",
-                            response.status,
-                            error_text
-                        )
-            except aiohttp.ClientError as e:
-                logger.error(f"Network error connecting to MLS API: {e}")
-                raise MLSAPIError(f"Network error connecting to MLS API: {e}", 503)
-            except Exception as e:
-                logger.error(f"Unexpected error: {e}")
-                raise MLSAPIError(f"Unexpected error: {e}", 500)
 
-    async def get_property_media_simple(self, property_id: str) -> MediaResponse:
-        """Get property media/images with minimal filters - just ResourceRecordKey filter"""
-        if not self.mls_url or not self.mls_token:
-            raise MLSAPIError("MLS configuration missing", 500)
+        url = f"{self.mls_url}/{endpoint}"
+        headers = {"Authorization": f"Bearer {self.mls_token}"}
         
-        # Clean property_id: strip whitespace and quotes, ensure string
-        if not isinstance(property_id, str):
-            property_id = str(property_id)
-        property_id = property_id.strip().strip("'\"")
-        
-        # USE DICTIONARY FOR PARAMS
-        params = {
-            '$filter': f"ResourceRecordKey eq '{property_id}'"
-        }
-        
-        url = f"{self.mls_url}/Media"
-        
-        # Remove Content-Type header for GET requests - OData API expects no body
-        headers = {
-            "Authorization": f"Bearer {self.mls_token}"
-        }
-
-        # Log the components that will be sent
-        logger.info(f"MLS API media simple request URL: {url}")
-        logger.info(f"MLS API media simple request params: {params}")
-        logger.info(f"MLS API media simple headers: {headers}")
-        print(f"MLS API media simple request URL: {url}")
-        print(f"MLS API media simple request params: {params}")
-        print(f"MLS API media simple headers: {headers}")
+        # Log the request details for debugging
+        logger.info(f"Making external MLS GET request to: {url}")
+        logger.info(f"Request params: {params}")
+        print(f"Making external MLS GET request to: {url}")
+        print(f"Request params: {params}")
         
         async with aiohttp.ClientSession() as session:
             try:
-                # Pass the params dictionary to the get method
                 async with session.get(url, headers=headers, params=params, timeout=30) as response:
                     response_text = await response.text()
-                    print(f"MLS API media simple response status: {response.status}")
-                    print(f"MLS API media simple response text: {response_text}")
+                    print(f"MLS API response status: {response.status}")
+                    print(f"MLS API response text: {response_text}")
                     if response.status == 200:
-                        data = await response.json()
-                        media_urls = [item.get("MediaURL") for item in data.get("value", []) if item.get("MediaURL")]
-                        return MediaResponse(
-                            property_id=property_id,
-                            media_urls=media_urls
-                        )
+                        return await response.json()
                     else:
-                        logger.error(f"MLS API media simple error {response.status}: {response_text}")
-                        print(f"MLS API media simple error {response.status}: {response_text}")
+                        logger.error(f"MLS API error {response.status}: {response_text}")
+                        # Attempt to parse JSON error message if available
+                        error_detail = None
+                        try:
+                            error_json = response.json()
+                            error_detail = error_json.get("error", {}).get("message", response_text)
+                        except aiohttp.ContentTypeError:
+                            error_detail = response_text
+                        
                         raise MLSAPIError(
-                            f"Media not found: {response.status}",
+                            f"External API returned an error: {response.status}",
                             response.status,
-                            response_text
+                            error_detail
                         )
             except aiohttp.ClientError as e:
                 logger.error(f"Network error connecting to MLS API: {e}")
-                raise MLSAPIError(f"Network error connecting to MLS API: {e}", 503)
+                raise MLSAPIError(f"Network error: {e}", 503)
             except Exception as e:
                 logger.error(f"Unexpected error: {e}")
                 raise MLSAPIError(f"Unexpected error: {e}", 500)
+
+    async def search_properties_by_filters(self, filters: str, top_limit: int, select_fields: str) -> MLSAPIResponse:
+        """
+        Gets properties based on a flexible filter string.
+        Args:
+            filters: The OData filter string, e.g., "PropertyType eq 'Residential' and ListPrice gt 500000"
+            top_limit: The maximum number of results.
+            select_fields: A comma-separated list of fields to return.
+        """
+        params = {
+            "$filter": filters,
+            "$top": top_limit,
+            "$select": select_fields
+        }
+        data = await self._make_mls_get_request(endpoint="Property", params=params)
+        return MLSAPIResponse(**data)
+
+    async def get_properties_with_selected_fields(self, top_limit: int, select_fields: str) -> MLSAPIResponse:
+        """
+        Gets properties with only $select and $top filters.
+        """
+        params = {
+            "$top": top_limit,
+            "$select": select_fields
+        }
+        data = await self._make_mls_get_request(endpoint="Property", params=params)
+        return MLSAPIResponse(**data)
+    
+    async def get_property_by_id(self, listing_key: str, select_fields: str) -> PropertyDetail:
+        """
+        Gets a single property's details by its ListingKey.
+        """
+        # The OData URL format for single entities is /EntitySet('Key')
+        # However, many APIs also support /EntitySet?$filter=Key eq '...'
+        # We will use the filter method for simplicity and consistency.
+        params = {
+            "$filter": f"ListingKey eq '{listing_key}'",
+            "$select": select_fields
+        }
+        data = await self._make_mls_get_request(endpoint="Property", params=params)
+        # Assuming the response is a list with a single item
+        if data and "value" in data and data["value"]:
+            return PropertyDetail(**data["value"][0])
+        raise MLSAPIError(f"Property with ListingKey '{listing_key}' not found", 404)
+
+    async def get_property_media_simple(self, resource_record_key: str) -> MediaResponse:
+        """
+        Gets a property's media (images) using its ResourceRecordKey.
+        """
+        params = {
+            "$filter": f"ResourceRecordKey eq '{resource_record_key}'"
+        }
+        data = await self._make_mls_get_request(endpoint="Media", params=params)
+        
+        media_urls = [item.get("MediaURL") for item in data.get("value", []) if item.get("MediaURL")]
+        return MediaResponse(
+            property_id=resource_record_key,
+            media_urls=media_urls
+        )
+
+    async def get_property_media_with_fields(self, resource_record_key: str, select_fields: str) -> MediaResponse:
+        """
+        Gets property media with a specific set of fields.
+        """
+        params = {
+            "$filter": f"ResourceRecordKey eq '{resource_record_key}'",
+            "$select": select_fields
+        }
+        data = await self._make_mls_get_request(endpoint="Media", params=params)
+        
+        media_urls = [item.get("MediaURL") for item in data.get("value", []) if item.get("MediaURL")]
+        return MediaResponse(
+            property_id=resource_record_key,
+            media_urls=media_urls
+        )
 
 property_service = PropertyService() 
