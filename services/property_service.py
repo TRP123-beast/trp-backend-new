@@ -193,9 +193,14 @@ class PropertyService:
         
         # Use the correct OData URL structure: /Media with $filter
         filter_query = f"ResourceRecordKey eq '{property_id}'"
+        
+        # Get select fields from env with quote stripping, or use fallback
+        select_fields = strip_quotes(getattr(settings, 'MLS_PROPERTY_IMAGE_FILTER_FIELDS', 
+            'ImageHeight,ImageSizeDescription,ImageWidth,MediaKey,MediaObjectID,MediaType,MediaURL,Order,ResourceRecordKey,PreferredPhotoYN'))
+        
         query_string = (
             f"$filter={filter_query}"
-            f"&$select={getattr(settings, 'MLS_PROPERTY_IMAGE_FILTER_FIELDS', 'ImageHeight,ImageSizeDescription,ImageWidth,MediaKey,MediaObjectID,MediaType,MediaURL,Order,ResourceRecordKey,PreferredPhotoYN')}"
+            f"&$select={select_fields}"
         )
         url = f"{self.mls_url}/Media?{query_string}"
         logger.info(f"MLS API media request: {url}")
