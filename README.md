@@ -170,7 +170,7 @@ The API uses JWT tokens for authentication. To access protected endpoints:
      "email": "test@example.com",
      "password": "yourpassword"
    }
-   ```
+```
 
 ## 🏗️ Project Structure Benefits
 

@@ -245,7 +245,11 @@ class PropertyService:
         if not self.mls_url or not self.mls_token:
             raise MLSAPIError("MLS configuration missing", 500)
         
-        # Simple filter without $select to avoid field type issues
+        # Clean property_id: strip whitespace and quotes, ensure string
+        if not isinstance(property_id, str):
+            property_id = str(property_id)
+        property_id = property_id.strip().strip("'\"")
+        
         filter_query = f"ResourceRecordKey eq '{property_id}'"
         url = f"{self.mls_url}/Media?$filter={filter_query}"
         logger.info(f"MLS API media simple request: {url}")
@@ -258,9 +262,13 @@ class PropertyService:
         logger.info(f"MLS API media simple headers: {headers}")
         print(f"MLS API media simple headers: {headers}")
         
+        # No body is sent, just GET with headers
         async with aiohttp.ClientSession() as session:
             try:
                 async with session.get(url, headers=headers, timeout=30) as response:
+                    response_text = await response.text()
+                    print(f"MLS API media simple response status: {response.status}")
+                    print(f"MLS API media simple response text: {response_text}")
                     if response.status == 200:
                         data = await response.json()
                         media_urls = [item.get("MediaURL") for item in data.get("value", []) if item.get("MediaURL")]
@@ -269,13 +277,12 @@ class PropertyService:
                             media_urls=media_urls
                         )
                     else:
-                        error_text = await response.text()
-                        logger.error(f"MLS API media simple error {response.status}: {error_text}")
-                        print(f"MLS API media simple error {response.status}: {error_text}")
+                        logger.error(f"MLS API media simple error {response.status}: {response_text}")
+                        print(f"MLS API media simple error {response.status}: {response_text}")
                         raise MLSAPIError(
                             f"Media not found: {response.status}",
                             response.status,
-                            error_text
+                            response_text
                         )
             except aiohttp.ClientError as e:
                 logger.error(f"Network error connecting to MLS API: {e}")
