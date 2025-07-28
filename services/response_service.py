@@ -13,37 +13,37 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 class ResponseService:
     @staticmethod
     def get_responses() -> List[Response]:
-        res = supabase.table("responses").select("*").execute()
-        if res.error:
-            raise Exception(res.error.message)
-        return [Response(**item) for item in res.data]
+        data, count, error = supabase.table("responses").select("*").execute()
+        if error:
+            raise Exception(error.message)
+        return [Response(**item) for item in data]
 
     @staticmethod
     def get_response(response_id: UUID) -> Optional[Response]:
-        res = supabase.table("responses").select("*").eq("id", str(response_id)).single().execute()
-        if res.error:
-            raise Exception(res.error.message)
-        return Response(**res.data)
+        data, count, error = supabase.table("responses").select("*").eq("id", str(response_id)).single().execute()
+        if error:
+            raise Exception(error.message)
+        return Response(**data)
 
     @staticmethod
     def create_response(response: ResponseCreate) -> Response:
-        res = supabase.table("responses").insert(response.dict()).execute()
-        if res.error:
-            raise Exception(res.error.message)
-        return Response(**res.data[0])
+        data, count, error = supabase.table("responses").insert(response.dict()).execute()
+        if error:
+            raise Exception(error.message)
+        return Response(**data[0])
 
     @staticmethod
     def update_response(response_id: UUID, response: ResponseUpdate) -> Response:
-        res = supabase.table("responses").update(response.dict(exclude_unset=True)).eq("id", str(response_id)).execute()
-        if res.error:
-            raise Exception(res.error.message)
-        return Response(**res.data[0])
+        data, count, error = supabase.table("responses").update(response.dict(exclude_unset=True)).eq("id", str(response_id)).execute()
+        if error:
+            raise Exception(error.message)
+        return Response(**data[0])
 
     @staticmethod
     def delete_response(response_id: UUID):
-        res = supabase.table("responses").delete().eq("id", str(response_id)).execute()
-        if res.error:
-            raise Exception(res.error.message)
+        data, count, error = supabase.table("responses").delete().eq("id", str(response_id)).execute()
+        if error:
+            raise Exception(error.message)
         return True
 
 response_service = ResponseService() 
