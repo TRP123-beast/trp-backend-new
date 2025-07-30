@@ -5,6 +5,8 @@ from app.user.api import router as user_router
 from app.flags.api import router as flags_router
 from app.questions.api import router as questions_router
 from app.responses.api import router as responses_router
+from app.property.api import router as property_router
+from app.property import wishlist_router, cart_router
 
 app = FastAPI(
     title="TRP Backend API",
@@ -26,6 +28,9 @@ app.include_router(user_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(flags_router, prefix="/api/v1/flags", tags=["flags"])
 app.include_router(questions_router, prefix="/api/v1/questions", tags=["questions"])
 app.include_router(responses_router, prefix="/api/v1/responses", tags=["responses"])
+app.include_router(property_router, prefix="/api/v1/properties", tags=["properties"])
+app.include_router(wishlist_router, prefix="/api/v1/wishlist", tags=["wishlist"])
+app.include_router(cart_router, prefix="/api/v1/cart", tags=["cart"])
 
 @app.get("/")
 async def root():
