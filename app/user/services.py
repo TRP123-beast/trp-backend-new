@@ -4,7 +4,6 @@ from app.user.models import User, UserCreate, UserUpdate
 from typing import List, Optional
 from uuid import UUID
 from passlib.context import CryptContext
-from app.auth.deps import create_access_token
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY")

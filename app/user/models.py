@@ -24,6 +24,7 @@ class UserUpdate(BaseModel):
 
 class User(UserBase):
     id: UUID
+    password_hash: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     lsp_count: Optional[int] = None
