@@ -1,11 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
-
-# Import routers from new modular structure
-from app.property.api import router as property_router
-from app.property.cart import router as cart_router
-from app.property.wishlist import router as wishlist_router
 from app.user.api import router as user_router
 from app.flags.api import router as flags_router
 from app.questions.api import router as questions_router
@@ -27,9 +22,6 @@ app.add_middleware(
 )
 
 # Include routers with new modular structure
-app.include_router(property_router, prefix="/api/v1/properties", tags=["properties"])
-app.include_router(cart_router, prefix="/api/v1/cart", tags=["cart"])
-app.include_router(wishlist_router, prefix="/api/v1/wishlist", tags=["wishlist"])
 app.include_router(user_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(flags_router, prefix="/api/v1/flags", tags=["flags"])
 app.include_router(questions_router, prefix="/api/v1/questions", tags=["questions"])
