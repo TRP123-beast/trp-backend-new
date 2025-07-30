@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from uuid import UUID
-from schemas.flag import Flag, FlagCreate, FlagUpdate
-from services.flag_service import flag_service
+from app.flags.models import Flag, FlagCreate, FlagUpdate
+from app.flags.services import flag_service
 
 router = APIRouter(tags=["flags"])
 

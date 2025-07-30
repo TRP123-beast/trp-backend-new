@@ -4,21 +4,19 @@ from uuid import UUID
 from datetime import datetime
 
 class ResponseBase(BaseModel):
-    user_id: Optional[UUID]
-    question_id: Optional[UUID]
+    question_id: UUID
+    user_id: UUID
     selected_answer: Any  # JSONB
-    flag_id: Optional[UUID]
-    section: str
+    response_text: Optional[str]
 
 class ResponseCreate(ResponseBase):
     pass
 
 class ResponseUpdate(BaseModel):
-    user_id: Optional[UUID]
     question_id: Optional[UUID]
+    user_id: Optional[UUID]
     selected_answer: Optional[Any]
-    flag_id: Optional[UUID]
-    section: Optional[str]
+    response_text: Optional[str]
 
 class Response(ResponseBase):
     id: UUID

@@ -1,6 +1,6 @@
 import os
 from supabase import create_client, Client
-from schemas.question import Question, QuestionCreate, QuestionUpdate
+from app.questions.models import Question, QuestionCreate, QuestionUpdate
 from typing import List, Optional
 from uuid import UUID
 

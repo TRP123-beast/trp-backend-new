@@ -1,6 +1,6 @@
 import os
 from supabase import create_client, Client
-from schemas.response import Response, ResponseCreate, ResponseUpdate
+from app.responses.models import Response, ResponseCreate, ResponseUpdate
 from typing import List, Optional
 from uuid import UUID
 

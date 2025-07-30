@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from uuid import UUID
-from schemas.question import Question, QuestionCreate, QuestionUpdate
-from services.question_service import question_service
+from app.questions.models import Question, QuestionCreate, QuestionUpdate
+from app.questions.services import question_service
 
 router = APIRouter(tags=["questions"])
 

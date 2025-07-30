@@ -1,6 +1,6 @@
 import os
 from supabase import create_client, Client
-from schemas.flag import Flag, FlagCreate, FlagUpdate
+from app.flags.models import Flag, FlagCreate, FlagUpdate
 from typing import List, Optional
 from uuid import UUID
 

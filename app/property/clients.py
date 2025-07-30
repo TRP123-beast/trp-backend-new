@@ -1,10 +1,15 @@
 import aiohttp
-from typing import Optional, List, Dict, Any
+from typing import Optional, Dict, Any
 from core.config import settings
-from schemas.property import MLSAPIResponse, PropertyDetail, MediaResponse
+from app.property.models import MLSAPIResponse, PropertyDetail, MediaResponse
 import logging
 
 logger = logging.getLogger("mls_proxy")
+
+def strip_quotes(val):
+    if isinstance(val, str) and val.startswith('"') and val.endswith('"'):
+        return val[1:-1]
+    return val
 
 class MLSAPIError(Exception):
     """Custom exception for MLS API errors."""
@@ -14,7 +19,7 @@ class MLSAPIError(Exception):
         self.status_code = status_code
         self.detail = detail
 
-class PropertyService:
+class MLSClient:
     def __init__(self):
         self.mls_url = settings.MLS_URL
         self.mls_token = settings.MLS_AUTHTOKEN
@@ -105,9 +110,6 @@ class PropertyService:
         """
         Gets a single property's details by its ListingKey.
         """
-        # The OData URL format for single entities is /EntitySet('Key')
-        # However, many APIs also support /EntitySet?$filter=Key eq '...'
-        # We will use the filter method for simplicity and consistency.
         params = {
             "$filter": f"ListingKey eq '{listing_key}'",
             "$select": select_fields
@@ -149,4 +151,4 @@ class PropertyService:
             media_urls=media_urls
         )
 
-property_service = PropertyService() 
+mls_client = MLSClient() 

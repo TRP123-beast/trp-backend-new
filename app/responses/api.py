@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from typing import List
 from uuid import UUID
-from schemas.response import Response, ResponseCreate, ResponseUpdate
-from services.response_service import response_service
+from app.responses.models import Response, ResponseCreate, ResponseUpdate
+from app.responses.services import response_service
 
 router = APIRouter(tags=["responses"])
 

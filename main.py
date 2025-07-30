@@ -1,40 +1,46 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
-from api.v1.api import api_router
 
-# Create FastAPI app
+# Import routers from new modular structure
+from app.property.api import router as property_router
+from app.property.cart import router as cart_router
+from app.property.wishlist import router as wishlist_router
+from app.user.api import router as user_router
+from app.flags.api import router as flags_router
+from app.questions.api import router as questions_router
+from app.responses.api import router as responses_router
+
 app = FastAPI(
     title="TRP Backend API",
     description="Toronto Regional Properties Backend API",
     version="1.0.0"
 )
 
-# Add CORS middleware
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=["*"],  # Configure this properly for production
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include API router
-app.include_router(api_router, prefix="/api/v1")
+# Include routers with new modular structure
+app.include_router(property_router, prefix="/api/v1/properties", tags=["properties"])
+app.include_router(cart_router, prefix="/api/v1/cart", tags=["cart"])
+app.include_router(wishlist_router, prefix="/api/v1/wishlist", tags=["wishlist"])
+app.include_router(user_router, prefix="/api/v1/users", tags=["users"])
+app.include_router(flags_router, prefix="/api/v1/flags", tags=["flags"])
+app.include_router(questions_router, prefix="/api/v1/questions", tags=["questions"])
+app.include_router(responses_router, prefix="/api/v1/responses", tags=["responses"])
 
 @app.get("/")
 async def root():
-    """Root endpoint"""
-    return {
-        "message": "TRP Backend API",
-        "version": "1.0.0",
-        "docs": "/docs",
-        "redoc": "/redoc"
-    }
+    return {"message": "TRP Backend API is running!"}
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
     return {"status": "healthy"}
 
 if __name__ == "__main__":

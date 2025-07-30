@@ -1,14 +1,12 @@
 from fastapi import APIRouter, HTTPException, status, Query
 from typing import Optional
-from schemas.property import MLSAPIResponse, PropertyResponse, PropertyDetail, MediaResponse
-from services.property_service import property_service, MLSAPIError
-from core.dependencies import get_current_user
+from app.property.models import MLSAPIResponse, PropertyResponse, PropertyDetail, MediaResponse
+from app.property.clients import mls_client, MLSAPIError
+from app.auth.deps import get_current_user
 from core.config import settings
 import logging
-import urllib.parse
 
 logger = logging.getLogger("mls_proxy")
-logging.basicConfig(level=logging.INFO)
 
 router = APIRouter(tags=["properties"])
 
@@ -40,13 +38,13 @@ async def search_properties(
         select_fields = settings.MLS_PPROPERTY_FILTER_FIELDS
         
         if filter_string:
-            return await property_service.search_properties_by_filters(
+            return await mls_client.search_properties_by_filters(
                 filters=filter_string,
                 top_limit=top_limit,
                 select_fields=select_fields
             )
         else:
-            return await property_service.get_properties_with_selected_fields(
+            return await mls_client.get_properties_with_selected_fields(
                 top_limit=top_limit,
                 select_fields=select_fields
             )
@@ -69,7 +67,7 @@ async def get_properties_selected_fields(
     try:
         top_limit = top_limit or int(settings.MLS_TOP_LIMIT)
         select_fields = settings.MLS_PPROPERTY_FILTER_FIELDS
-        return await property_service.get_properties_with_selected_fields(
+        return await mls_client.get_properties_with_selected_fields(
             top_limit=top_limit,
             select_fields=select_fields
         )
@@ -89,7 +87,7 @@ async def get_property(property_id: str):
     """Get specific property details"""
     try:
         select_fields = settings.MLS_PPROPERTY_FILTER_FIELDS
-        return await property_service.get_property_by_id(property_id, select_fields)
+        return await mls_client.get_property_by_id(property_id, select_fields)
     except MLSAPIError as e:
         raise HTTPException(
             status_code=e.status_code,
@@ -104,7 +102,7 @@ async def get_property_media_with_fields(property_id: str):
     try:
         select_fields = getattr(settings, 'MLS_PROPERTY_IMAGE_FILTER_FIELDS', 
             'ImageHeight,ImageSizeDescription,ImageWidth,MediaKey,MediaObjectID,MediaType,MediaURL,Order,ResourceRecordKey')
-        return await property_service.get_property_media_with_fields(property_id, select_fields)
+        return await mls_client.get_property_media_with_fields(property_id, select_fields)
     except MLSAPIError as e:
         raise HTTPException(
             status_code=e.status_code,
@@ -117,7 +115,7 @@ async def get_property_media_with_fields(property_id: str):
 async def get_property_media_simple(property_id: str):
     """Get property media/images with minimal filters - just ResourceRecordKey filter"""
     try:
-        return await property_service.get_property_media_simple(property_id)
+        return await mls_client.get_property_media_simple(property_id)
     except MLSAPIError as e:
         raise HTTPException(
             status_code=e.status_code,

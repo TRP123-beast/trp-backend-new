@@ -1,89 +1,154 @@
 # TRP Backend API
 
-Toronto Regional Properties (TRP) Backend API - A FastAPI-based real estate platform integrating MLS data and Supabase authentication.
+A FastAPI-based backend for Toronto Regional Properties (TRP) application, providing a modular API for property management, user authentication, and real estate data integration.
 
-## 🏗️ Architecture
-
-This project follows a clean, modular FastAPI architecture with clear separation of concerns:
+## 🏗️ Project Structure
 
 ```
-app/
-├── core/                 # Core configurations and utilities
-│   ├── config.py        # Environment variables and settings
-│   ├── security.py      # JWT handling and password hashing
-│   └── dependencies.py  # Reusable FastAPI dependencies
-├── schemas/             # Pydantic models for API validation
-│   ├── user.py         # User request/response models
-│   └── property.py     # Property request/response models
-├── services/           # Business logic layer
-│   ├── user_service.py     # User-related business logic
-│   ├── property_service.py # Property-related business logic
-│   └── page_load_service.py # Merged data services
-├── api/                # API endpoints (routes)
-│   └── v1/
-│       ├── endpoints/  # Individual endpoint modules
-│       │   ├── users.py
-│       │   ├── properties.py
-│       │   └── page_load.py
-│       └── api.py      # API router aggregator
-└── main.py             # FastAPI application entry point
+trp-backend-new/
+├── 📄 .env                          # Environment variables (not in git)
+├── 📄 .env.example                  # Environment template
+├── 📄 .gitignore                    # Git ignore rules
+├── 📄 README.md                     # Project documentation
+├── 📄 main.py                       # FastAPI application entry point
+├── 📄 requirements.txt              # Python dependencies
+├── 🎯 venv/                         # Virtual environment
+├── 📁 core/                         # Core configuration
+│   ├── 📄 config.py                 # Settings and configuration
+│   └── 📄 security.py               # Security utilities
+└── 📁 app/                          # Main application code
+    ├── 📄 __init__.py
+    ├── 📁 auth/                     # Authentication module
+    │   └── 📄 deps.py               # JWT auth dependencies
+    ├── 📁 property/                 # Property management module
+    │   ├── 📄 __init__.py
+    │   ├── 📄 api.py                # 🚀 Property API endpoints
+    │   ├── 📄 cart.py               # 🛒 User cart functionality
+    │   ├── 📄 wishlist.py           # ❤️ User wishlist functionality
+    │   ├── 📄 clients.py            # 🌐 MLS API client
+    │   ├── 📄 models.py             # 📊 Pydantic data models
+    │   └── 📄 services.py           # ⚙️ Business logic services
+    ├── 📁 user/                     # User management module
+    │   ├── 📄 __init__.py
+    │   ├── 📄 api.py                # User API endpoints
+    │   ├── 📄 models.py             # User data models
+    │   └── 📄 services.py           # User business logic
+    ├── 📁 flags/                    # Flags management module
+    │   ├── 📄 __init__.py
+    │   ├── 📄 api.py                # Flags API endpoints
+    │   ├── 📄 models.py             # Flags data models
+    │   └── 📄 services.py           # Flags business logic
+    ├── 📁 questions/                # Questions management module
+    │   ├── 📄 __init__.py
+    │   ├── 📄 api.py                # Questions API endpoints
+    │   ├── 📄 models.py             # Questions data models
+    │   └── 📄 services.py           # Questions business logic
+    └── 📁 responses/                # Responses management module
+        ├── 📄 __init__.py
+        ├── 📄 api.py                # Responses API endpoints
+        ├── 📄 models.py             # Responses data models
+        └── 📄 services.py           # Responses business logic
 ```
 
 ## 🚀 Features
 
-- **Property Search**: Filter and retrieve MLS property listings
-- **Property Details**: Get detailed property information
-- **Property Media**: Fetch property images and media
-- **User Authentication**: Signup, login, and token management via Supabase
-- **Page Load APIs**: Merged data endpoints for frontend consumption
-- **JWT Authentication**: Secure token-based authentication
-- **CORS Support**: Cross-origin resource sharing enabled
-- **API Documentation**: Auto-generated Swagger/OpenAPI docs
+### Property Management
+- **MLS Integration**: Direct integration with MLS OData API for real estate data
+- **Property Search**: Advanced filtering and search capabilities
+- **Media Management**: Property image and media handling
+- **Cart System**: User shopping cart for properties
+- **Wishlist**: User wishlist functionality
 
-## 📋 Prerequisites
+### User Management
+- **Authentication**: JWT-based user authentication
+- **User Profiles**: Complete user profile management
+- **Authorization**: Role-based access control
 
-- Python 3.9+
-- FastAPI
-- Uvicorn
-- aiohttp
-- python-dotenv
-- python-jose[cryptography]
-- passlib[bcrypt]
-- email-validator
+### Data Management
+- **Flags**: System flags and configuration
+- **Questions**: Dynamic question management
+- **Responses**: User response tracking
 
-## 🔧 Installation
+## 🛠️ Technology Stack
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd trp-backend-new
-   ```
+- **FastAPI**: Modern, fast web framework for building APIs
+- **Pydantic**: Data validation and settings management
+- **Supabase**: Backend-as-a-Service for database operations
+- **aiohttp**: Asynchronous HTTP client for external API calls
+- **JWT**: JSON Web Tokens for authentication
+- **PostgreSQL**: Database (via Supabase)
 
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+## 📋 API Endpoints
 
-3. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Properties
+- `GET /api/v1/properties/search` - Search properties with filters
+- `GET /api/v1/properties/selected-fields` - Get properties with selected fields
+- `GET /api/v1/properties/get/{property_id}` - Get specific property details
+- `GET /api/v1/properties/media/{property_id}` - Get property media with fields
+- `GET /api/v1/properties/media-simple/{property_id}` - Get property media (simple)
 
-4. **Set up environment variables**
-   ```bash
-   cp env.template .env
-   # Edit .env with your actual values
-   ```
+### Cart
+- `POST /api/v1/cart/add/{property_id}` - Add property to cart
+- `GET /api/v1/cart/` - Get user's cart
+- `DELETE /api/v1/cart/remove/{property_id}` - Remove property from cart
+- `DELETE /api/v1/cart/clear` - Clear user's cart
 
-## ⚙️ Configuration
+### Wishlist
+- `POST /api/v1/wishlist/add/{property_id}` - Add property to wishlist
+- `GET /api/v1/wishlist/` - Get user's wishlist
+- `DELETE /api/v1/wishlist/remove/{property_id}` - Remove property from wishlist
+- `DELETE /api/v1/wishlist/clear` - Clear user's wishlist
 
-Create a `.env` file with the following variables:
+### Users
+- `POST /api/v1/users/signup` - Create new user account
+- `POST /api/v1/users/login` - User authentication
+- `GET /api/v1/users/me` - Get current user info
+- `GET /api/v1/users/` - Get all users (admin)
+- `GET /api/v1/users/{user_id}` - Get specific user
+- `PUT /api/v1/users/{user_id}` - Update user
+- `DELETE /api/v1/users/{user_id}` - Delete user
 
-```env
+### Flags
+- `GET /api/v1/flags/` - List all flags
+- `GET /api/v1/flags/{flag_id}` - Get specific flag
+- `POST /api/v1/flags/` - Create new flag
+- `PUT /api/v1/flags/{flag_id}` - Update flag
+- `DELETE /api/v1/flags/{flag_id}` - Delete flag
+
+### Questions
+- `GET /api/v1/questions/` - List all questions
+- `GET /api/v1/questions/{question_id}` - Get specific question
+- `POST /api/v1/questions/` - Create new question
+- `PUT /api/v1/questions/{question_id}` - Update question
+- `DELETE /api/v1/questions/{question_id}` - Delete question
+
+### Responses
+- `GET /api/v1/responses/` - List all responses
+- `GET /api/v1/responses/{response_id}` - Get specific response
+- `POST /api/v1/responses/` - Create new response
+- `PUT /api/v1/responses/{response_id}` - Update response
+- `DELETE /api/v1/responses/{response_id}` - Delete response
+
+## 🔧 Setup and Installation
+
+### Prerequisites
+- Python 3.10+
+- Supabase account
+- MLS API access
+
+### Environment Variables
+Create a `.env` file based on `.env.example`:
+
+```bash
 # MLS Configuration
-MLS_URL=your_mls_api_url
-MLS_AUTHTOKEN=your_mls_auth_token
+MLS_URL=https://query.ampre.ca/odata
+MLS_AUTHTOKEN=your_mls_token
+MLS_PROPERTY_TYPE=Residential Freehold
+MLS_RENTAL_APPLICATION=true
+MLS_ORIFINATING_SYSTEM_NAME=Toronto Regional Real Estate Board
+MLS_TOP_LIMIT=10
+MLS_PPROPERTY_FILTER_FIELDS=BathroomsTotalInteger,BedroomsTotal,BuildingAreaTotal,City,CityRegion,CrossStreet,ListingKey,ListPrice,ParkingSpaces,UnparsedAddress
+MLS_PROPERTY_IMAGE_FILTER_FIELDS=ImageHeight,ImageSizeDescription,ImageWidth,MediaKey,MediaObjectID,MediaType,MediaURL,Order,ResourceRecordKey
 
 # Supabase Configuration
 SUPABASE_URL=your_supabase_url
@@ -91,104 +156,74 @@ SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
 # JWT Configuration
-JWT_SECRET_KEY=your_jwt_secret_key
-JWT_ALGORITHM=HS256
+SECRET_KEY=your_secret_key
+ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# CORS Configuration
+ALLOWED_ORIGINS=["*"]
 ```
 
-## 🏃‍♂️ Running the Application
-
-### Local Development
+### Installation
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# Clone the repository
+git clone <repository-url>
+cd trp-backend-new
+
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the application
+uvicorn main:app --reload
 ```
 
-### Production (Render)
-The application is configured for Render deployment with the provided `Procfile`.
-
-## 📚 API Endpoints
-
-### Base URL
-- **Local**: `http://localhost:8000`
-- **Production**: `https://trp-backend-new.onrender.com`
-
-### API Documentation
-- **Swagger UI**: `/docs`
-- **ReDoc**: `/redoc`
-
-### Available Endpoints
-
-#### Properties
-- `POST /api/v1/properties/search` - Search properties with filters
-- `GET /api/v1/properties/get/{property_id}` - Get property details
-- `GET /api/v1/properties/media/{property_id}` - Get property media
-
-#### Users
-- `POST /api/v1/users/auth/signup` - Create user account
-- `POST /api/v1/users/auth/login` - User login
-- `POST /api/v1/users/auth/refresh` - Refresh JWT token
-- `GET /api/v1/users/me` - Get current user info (authenticated)
-
-#### Page Load
-- `GET /api/v1/page_load/home` - Get merged home page data
-
-## 🔒 Authentication
-
-The API uses JWT tokens for authentication. To access protected endpoints:
-
-1. **Login** to get a JWT token
-2. **Include the token** in the Authorization header:
-   ```
-   Authorization: Bearer <your_jwt_token>
-   ```
+### Database Setup
+1. Create a Supabase project
+2. Set up the required tables (users, flags, questions, responses)
+3. Configure environment variables with your Supabase credentials
 
 ## 🧪 Testing
 
-### Using Postman
+```bash
+# Run tests
+pytest
 
-1. **Test the docs endpoint**:
-   ```
-   GET https://trp-backend-new.onrender.com/docs
-   ```
-
-2. **Test property search**:
-   ```
-   POST https://trp-backend-new.onrender.com/api/v1/properties/search
-   Content-Type: application/json
-   
-   {
-     "MLS_TOP_LIMIT": 5
-   }
-   ```
-
-3. **Test user signup**:
-   ```
-   POST https://trp-backend-new.onrender.com/api/v1/users/auth/signup
-   Content-Type: application/json
-   
-   {
-     "email": "test@example.com",
-     "password": "yourpassword"
-   }
+# Run with coverage
+pytest --cov=app
 ```
 
-## 🏗️ Project Structure Benefits
+## 📚 API Documentation
 
-- **Separation of Concerns**: Each module has a single responsibility
-- **Maintainability**: Easy to locate and modify specific functionality
-- **Testability**: Services can be tested independently
-- **Scalability**: New features can be added without affecting existing code
-- **FastAPI Synergy**: Leverages FastAPI's dependency injection and Pydantic validation
+Once the server is running, visit:
+- **Swagger UI**: `http://localhost:8000/docs`
+- **ReDoc**: `http://localhost:8000/redoc`
 
-## 🔄 Migration from Old Structure
+## 🚀 Deployment
 
-The project has been restructured from the original `modules/` structure to follow FastAPI best practices:
+### Render Deployment
+1. Connect your GitHub repository to Render
+2. Configure environment variables in Render dashboard
+3. Deploy as a Web Service
 
-- **Old**: `modules/properties/search/search.py`
-- **New**: `app/api/v1/endpoints/properties.py` + `app/services/property_service.py`
+### Environment Variables for Production
+Ensure all required environment variables are set in your deployment platform.
 
-This provides better separation between API routes and business logic.
+## 🤝 Contributing
 
-## 📝 License
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
-This project is proprietary to Toronto Regional Properties. 
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For support and questions, please contact the development team. 
