@@ -1,12 +1,18 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import settings
 from app.user.api import router as user_router
 from app.flags.api import router as flags_router
 from app.questions.api import router as questions_router
 from app.responses.api import router as responses_router
 from app.property.api import router as property_router
 from app.property import wishlist_router, cart_router
+
+# Try to import settings, but handle missing config gracefully
+try:
+    from core.config import settings
+    CORS_ORIGINS = getattr(settings, 'ALLOWED_ORIGINS', ["*"])
+except Exception:
+    CORS_ORIGINS = ["*"]
 
 app = FastAPI(
     title="TRP Backend API",
@@ -17,7 +23,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure this properly for production
+    allow_origins=CORS_ORIGINS,  # Use configured origins or fallback to ["*"]
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
