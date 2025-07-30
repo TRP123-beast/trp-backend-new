@@ -33,6 +33,7 @@ wheels/
 *.egg
 
 # IDE
+.cursor/
 .vscode/
 .idea/
 *.swp
