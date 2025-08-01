@@ -1,7 +1,7 @@
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import List
-from pydantic import field_validator
+from pydantic import field_validator, computed_field
 
 class Settings(BaseSettings):
     # MLS API Configuration
@@ -29,18 +29,15 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
 
     # CORS Configuration
-    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
+    ALLOWED_ORIGINS_RAW: str = "http://localhost:3000,http://localhost:8000"
 
-    @field_validator('ALLOWED_ORIGINS', mode='before')
-    @classmethod
-    def parse_allowed_origins(cls, v):
-        if not v or v.strip() == "":
+    @computed_field
+    @property
+    def ALLOWED_ORIGINS(self) -> List[str]:
+        if not self.ALLOWED_ORIGINS_RAW or self.ALLOWED_ORIGINS_RAW.strip() == "":
             return ["*"]
-        if isinstance(v, str):
-            # Split by comma and strip whitespace
-            origins = [origin.strip() for origin in v.split(',') if origin.strip()]
-            return origins if origins else ["*"]
-        return v
+        origins = [origin.strip() for origin in self.ALLOWED_ORIGINS_RAW.split(',') if origin.strip()]
+        return origins if origins else ["*"]
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

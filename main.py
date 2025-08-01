@@ -11,7 +11,7 @@ from app.property import wishlist_router, cart_router
 # Try to import settings, but handle missing config gracefully
 try:
     from core.config import settings
-    CORS_ORIGINS = getattr(settings, 'ALLOWED_ORIGINS', ["*"])
+    CORS_ORIGINS = settings.ALLOWED_ORIGINS
 except Exception:
     CORS_ORIGINS = ["*"]
 
