@@ -5,8 +5,8 @@ from fastapi import HTTPException
 
 load_dotenv()
 
-MLS_API_URL = os.getenv("MLS_API_URL")
-MLS_AUTH_TOKEN = os.getenv("MLS_AUTH_TOKEN")
+MLS_API_URL = os.getenv("MLS_URL")
+MLS_AUTH_TOKEN = os.getenv("MLS_AUTHTOKEN")
 MLS_TOP_LIMIT = os.getenv("MLS_TOP_LIMIT", "12")
 
 # Validate required environment variables
